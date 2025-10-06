@@ -1,0 +1,131 @@
+name: GitHub Activity to Discord
+
+on:
+ push:
+  branches:
+   - '**'
+ pull_request:
+  types: [opened, closed, reopened, synchronize, edited]
+ release:
+  types: [published, created, edited, deleted]
+ create:
+ delete:
+ fork:
+
+jobs:
+ notify-discord:
+  runs-on: ubuntu-latest
+  steps:
+   - name: Checkout repository
+     if: github.event_name == 'push'
+     uses: actions/checkout@v4
+     with:
+      fetch-depth: 2
+   - name: Send notification to Discord
+     env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      EVENT_NAME: ${{ github.event_name }}
+      REPO: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      BRANCH: ${{ github.ref_name }}
+      COMMIT_MSG: ${{ github.event.head_commit.message || '' }}
+      COMMIT_URL: ${{ github.event.head_commit.url || '' }}
+      COMMIT_SHA: ${{ github.sha }}
+     run: |
+      TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+      escape_json() {
+       echo "$1" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/$/\\n/' | tr -d '\n' | sed 's/\\n$//'
+      }
+      if [ "$EVENT_NAME" = "push" ]; then
+       COMMIT_SHORT="${COMMIT_SHA:0:7}"
+       COMMIT_MSG_ESCAPED=$(escape_json "$COMMIT_MSG")
+       FILES_ADDED=$(git diff --name-only --diff-filter=A HEAD~1 HEAD 2>/dev/null | head -5 | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//' || echo "")
+       FILES_MODIFIED=$(git diff --name-only --diff-filter=M HEAD~1 HEAD 2>/dev/null | head -5 | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//' || echo "")
+       FILES_REMOVED=$(git diff --name-only --diff-filter=D HEAD~1 HEAD 2>/dev/null | head -5 | tr '\n' ',' | sed 's/,/, /g' | sed 's/, $//' || echo "")
+       ADDED_COUNT=$(git diff --name-only --diff-filter=A HEAD~1 HEAD 2>/dev/null | wc -l || echo "0")
+       MODIFIED_COUNT=$(git diff --name-only --diff-filter=M HEAD~1 HEAD 2>/dev/null | wc -l || echo "0")
+       REMOVED_COUNT=$(git diff --name-only --diff-filter=D HEAD~1 HEAD 2>/dev/null | wc -l || echo "0")
+       FILES_ADDED=$(escape_json "$FILES_ADDED")
+       FILES_MODIFIED=$(escape_json "$FILES_MODIFIED")
+       FILES_REMOVED=$(escape_json "$FILES_REMOVED")
+       CHANGES_FIELD=""
+       if [ "$ADDED_COUNT" -gt 0 ]; then
+        if [ "$ADDED_COUNT" -gt 5 ]; then
+         CHANGES_FIELD="${CHANGES_FIELD}**Added ($ADDED_COUNT):** ${FILES_ADDED}... _(+$((ADDED_COUNT - 5)) more)_\\n"
+        else
+         CHANGES_FIELD="${CHANGES_FIELD}**Added ($ADDED_COUNT):** ${FILES_ADDED}\\n"
+        fi
+       fi
+       if [ "$MODIFIED_COUNT" -gt 0 ]; then
+        if [ "$MODIFIED_COUNT" -gt 5 ]; then
+         CHANGES_FIELD="${CHANGES_FIELD}**Modified ($MODIFIED_COUNT):** ${FILES_MODIFIED}... _(+$((MODIFIED_COUNT - 5)) more)_\\n"
+        else
+         CHANGES_FIELD="${CHANGES_FIELD}**Modified ($MODIFIED_COUNT):** ${FILES_MODIFIED}\\n"
+        fi
+       fi
+       if [ "$REMOVED_COUNT" -gt 0 ]; then
+        if [ "$REMOVED_COUNT" -gt 5 ]; then
+         CHANGES_FIELD="${CHANGES_FIELD}**Removed ($REMOVED_COUNT):** ${FILES_REMOVED}... _(+$((REMOVED_COUNT - 5)) more)_"
+        else
+         CHANGES_FIELD="${CHANGES_FIELD}**Removed ($REMOVED_COUNT):** ${FILES_REMOVED}"
+        fi
+       fi
+       [ -z "$CHANGES_FIELD" ] && CHANGES_FIELD="No files changed"
+       PAYLOAD="{\"embeds\":[{\"title\":\"📝 **NEW COMMIT PUSHED**\",\"description\":\"\\u200b\",\"color\":1579032,\"fields\":[{\"name\":\"Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"Branch\",\"value\":\"\`${BRANCH}\`\",\"inline\":true},{\"name\":\"Commit\",\"value\":\"\`${COMMIT_SHORT}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${ACTOR}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"💬 Commit Message\",\"value\":\"\`\`\`${COMMIT_MSG_ESCAPED}\`\`\`\",\"inline\":false},{\"name\":\"\\u200b\",\"value\":\"\\u200b\",\"inline\":false},{\"name\":\"📁 Changes\",\"value\":\"${CHANGES_FIELD}\",\"inline\":false},{\"name\":\"🔗 Link\",\"value\":\"[View Commit](${COMMIT_URL})\",\"inline\":false}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      elif [ "$EVENT_NAME" = "pull_request" ]; then
+       PR_TITLE=$(escape_json "${{ github.event.pull_request.title }}")
+       PR_NUMBER="${{ github.event.pull_request.number }}"
+       PR_URL="${{ github.event.pull_request.html_url }}"
+       PR_ACTION="${{ github.event.action }}"
+       HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+       BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+       PR_USER="${{ github.event.pull_request.user.login }}"
+       case "$PR_ACTION" in
+        opened) COLOR=1579032 ;;
+        closed) COLOR=1579032 ;;
+        reopened) COLOR=1579032 ;;
+        merged) COLOR=1579032 ;;
+        *) COLOR=1579032 ;;
+       esac
+       IS_MERGED="${{ github.event.pull_request.merged }}"
+       [ "$IS_MERGED" = "true" ] && PR_ACTION="merged" && COLOR=1579032
+       PAYLOAD="{\"embeds\":[{\"title\":\"🔀 **PULL REQUEST ${PR_ACTION^^}**\",\"description\":\"\\u200b\",\"color\":${COLOR},\"fields\":[{\"name\":\"Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"PR Number\",\"value\":\"\`#${PR_NUMBER}\`\",\"inline\":true},{\"name\":\"Action\",\"value\":\"\`${PR_ACTION}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${PR_USER}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"🌿 Branch\",\"value\":\"\`${HEAD_BRANCH}\` → \`${BASE_BRANCH}\`\",\"inline\":false},{\"name\":\"📝 Title\",\"value\":\"${PR_TITLE}\",\"inline\":false},{\"name\":\"🔗 Link\",\"value\":\"[View Pull Request](${PR_URL})\",\"inline\":false}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      elif [ "$EVENT_NAME" = "release" ]; then
+       RELEASE_TAG=$(escape_json "${{ github.event.release.tag_name }}")
+       RELEASE_NAME=$(escape_json "${{ github.event.release.name }}")
+       RELEASE_URL="${{ github.event.release.html_url }}"
+       RELEASE_ACTION="${{ github.event.action }}"
+       RELEASE_AUTHOR="${{ github.event.release.author.login }}"
+       PAYLOAD="{\"embeds\":[{\"title\":\"🚀 **RELEASE ${RELEASE_ACTION^^}**\",\"description\":\"\\u200b\",\"color\":1579032,\"fields\":[{\"name\":\"Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"Tag\",\"value\":\"\`${RELEASE_TAG}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${RELEASE_AUTHOR}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"📦 Release Name\",\"value\":\"\\n${RELEASE_NAME}\",\"inline\":false},{\"name\":\"🔗 Link\",\"value\":\"\\n[View Release](${RELEASE_URL})\",\"inline\":false}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      elif [ "$EVENT_NAME" = "create" ]; then
+       REF_TYPE="${{ github.event.ref_type }}"
+       REF_NAME="${{ github.event.ref }}"
+       REPO_URL="https://github.com/${REPO}"
+       if [ "$REF_TYPE" = "branch" ]; then
+        EMOJI="🌱"
+        TITLE="**BRANCH CREATED**"
+        LINK_URL="${REPO_URL}/tree/${REF_NAME}"
+       else
+        EMOJI="🏷️"
+        TITLE="**TAG CREATED**"
+        LINK_URL="${REPO_URL}/releases/tag/${REF_NAME}"
+       fi
+       PAYLOAD="{\"embeds\":[{\"title\":\"${EMOJI} ${TITLE}\",\"description\":\"\\u200b\",\"color\":1579032,\"fields\":[{\"name\":\"Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"${REF_TYPE}\",\"value\":\"\`${REF_NAME}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${ACTOR}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"🔗 Link\",\"value\":\"\\n[View ${REF_TYPE}](${LINK_URL})\",\"inline\":false}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      elif [ "$EVENT_NAME" = "delete" ]; then
+       REF_TYPE="${{ github.event.ref_type }}"
+       REF_NAME="${{ github.event.ref }}"
+       if [ "$REF_TYPE" = "branch" ]; then
+        EMOJI="🔥"
+        TITLE="**BRANCH DELETED**"
+       else
+        EMOJI="🗑️"
+        TITLE="**TAG DELETED**"
+       fi
+       PAYLOAD="{\"embeds\":[{\"title\":\"${EMOJI} ${TITLE}\",\"description\":\"\\u200b\",\"color\":1579032,\"fields\":[{\"name\":\"Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"${REF_TYPE}\",\"value\":\"\`${REF_NAME}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${ACTOR}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      elif [ "$EVENT_NAME" = "fork" ]; then
+       FORKED_REPO="${{ github.event.forkee.full_name }}"
+       FORKED_URL="${{ github.event.forkee.html_url }}"
+       FORK_OWNER="${{ github.event.forkee.owner.login }}"
+       PAYLOAD="{\"embeds\":[{\"title\":\"🍴 **REPOSITORY FORKED**\",\"description\":\"\\u200b\",\"color\":1579032,\"fields\":[{\"name\":\"Original Repository\",\"value\":\"\`${REPO}\`\",\"inline\":true},{\"name\":\"Forked Repository\",\"value\":\"\`${FORKED_REPO}\`\",\"inline\":true},{\"name\":\"By\",\"value\":\"${FORK_OWNER}\",\"inline\":true},{\"name\":\"Date\",\"value\":\"${TIMESTAMP}\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"​\",\"value\":\"​\",\"inline\":true},{\"name\":\"🔗 Link\",\"value\":\"\\n[View Fork](${FORKED_URL})\",\"inline\":false}],\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+      fi
+      curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$DISCORD_WEBHOOK"
