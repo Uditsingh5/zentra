@@ -1,0 +1,20 @@
+# Root folder
+
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+
+
+# Client folder
+
+client/node_modules/
+client/build/
+client/.env
+
+
+# Server folder
+
+server/node_modules/
+server/.env
+server/logs/
