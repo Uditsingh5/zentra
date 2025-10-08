@@ -7,7 +7,7 @@ import authRoute from "./routes/authRoutes.js"
 import postRoute from "./routes/postRoutes.js"
 import userRouter from "./routes/userRoutes.js"
 import commentRoute from "./routes/commentRoutes.js"
-
+import uploadRouter from "./routes/upload.js"
 
 //env config and database area
 
@@ -38,6 +38,8 @@ app.use('/api/user',userRouter)
 app.use("/api/post", postRoute)
 app.use("/api/comment", commentRoute)
 
+// Upload Route
+app.use("/api/upload",uploadRouter);
 
 
 //Default Routes
