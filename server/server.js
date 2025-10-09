@@ -9,6 +9,9 @@ import userRouter from "./routes/userRoutes.js"
 import commentRoute from "./routes/commentRoutes.js"
 import uploadRouter from "./routes/upload.js"
 
+import { errorHandler } from "./middlewares/errorHandler.js"
+
+
 //env config and database area
 
 dotenv.config({ quiet: true });
@@ -48,7 +51,8 @@ app.get("/", (req, res) => {
   res.send('<h1>Zentra ki taraf se Ram Ram🙏!!</h1>');
 })
 
-
+// custom error handler -> use Global Error Handler only after all routes are able to throw customErrors to it
+// app.use(errorHandler)
 
 // Console Text Color
 const RESET = "\x1b[0m";

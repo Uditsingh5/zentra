@@ -21,3 +21,6 @@ uploadRouter.post("/single", upload.single("file"), (req, res) => {
 });
 
 export default uploadRouter;
+
+
+// Unable to handle errors from multer. Need to check later. mainly the upload limits and file type errors.

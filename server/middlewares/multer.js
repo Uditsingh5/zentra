@@ -8,7 +8,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params:{
     folder: 'ZentraUploads',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'svg', 'webp', 'pdf', 'doc', 'docx']
+    allowed_formats: ['jpg', 'png', 'jpeg', 'gif']
   }
 })
 
