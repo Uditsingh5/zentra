@@ -47,17 +47,21 @@ export const postCreate = async (req, res) => {
 export const postDelete = async (req, res) => {
       try {
             const postId = req.params.id;
-            const delPost = await Post.findByIdAndDelete(postId)
+            if (!mongoose.Types.ObjectId.isValid(postId)) {
+                  console.warn(`[!] Invalid ObjectId: ${postId}`);
+                  return res.status(400).json({ message: "Invalid Post ID" });
+            }
+
+            const delPost = await Post.findByIdAndDelete(postId); //it will return the content of deleted post if found and deleted else null
             if (delPost) {
                   console.log("Post Deleted!");
+                  return res.status(200).json({ message: "Post deleted successfully!!"});
             } else {
                   console.log("No Post Found!");
-                  return res.status(404).json({ message: "Post Not Found!" })
+                  return res.status(404).json({ message: "Post Not Found!" });
             }
       } catch (error) {
             console.log('Error: ', error);
-            return res.status(500).json({ message: "Internal Server Error!" })
+            return res.status(500).json({ message: "Internal Server Error!" });
       }
-      return res.status(204).json({ message: "Post Deleted SuccessFully!!" });
-
 }

@@ -60,7 +60,7 @@ const userSchema = new mongoose.Schema({
     type: Object,
     required: false,
     default: {
-      "isPrivateAccount": false,
+      "isPrivateAccount": true,
       "activeNotifications": true,
       "enabled2fa": false,
       "theme": "system"
