@@ -53,7 +53,6 @@ const userSchema = new mongoose.Schema({
     required: false
   },
 
-
   // Settings Preferences
 
   preferences: {
@@ -65,6 +64,14 @@ const userSchema = new mongoose.Schema({
       "enabled2fa": false,
       "theme": "system"
     }
+  },
+  Followers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'user',
+  },
+  Following: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'user',
   },
   createdAt: {
     type: Date,

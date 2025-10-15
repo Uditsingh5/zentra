@@ -1,8 +1,10 @@
 import React from 'react'
 
-const FollowButton = () => {
+const FollowButton = ({name, classes, action}) => {
   return (
-    <div>FollowButton</div>
+    <button className = {`bg-[#CE97FF] text-gray-700 hover:text-gray-300 px-4 py-2 ${classes} rounded-2xl`} onClick = {action}>
+      {name}
+    </button>
   )
 }
 
