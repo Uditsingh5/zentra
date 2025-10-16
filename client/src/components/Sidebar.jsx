@@ -8,7 +8,7 @@ const navItems = [
   { label: "Search", to: "/search", icon: Search01Icon },
   { label: "Profile", to: "/profile", icon: User03Icon },
   { label: "Notification", to: "/notification", icon: Notification01Icon },
-  { label: "Collab", to: "/collab", icon: UserMultiple02Icon },
+  // { label: "Collab", to: "/collab", icon: UserMultiple02Icon },
   { label: "Settings", to: "/settings", icon: Settings01Icon },
   { label: "Logout", to: "/logout", icon: LogoutSquare01Icon },
 ];
@@ -17,12 +17,11 @@ const Sidebar = () => {
   return (
     <nav className="w-64 h-full bg-white border-r-2 border-gray-200">
       <div className="flex flex-col h-full">
-        {/* Logo Section */}
-        <div className="px-6 py-8">
-          <div className="text-3xl font-bold text-black tracking-tight">Zentra</div>
+  
+        <div className="px-6 py-6">
+          <div className="text-4xl text-gray-800 -tracking-normal font-[Fira_Sans] font-semibold" >Zentra</div>
         </div>
       
-        {/* Navigation */}
         <div className="flex-1 px-3">
           <ul className="space-y-2">
             {navItems.map(({ label, to, icon: Icon }) => (
@@ -41,7 +40,6 @@ const Sidebar = () => {
                     <HugeiconsIcon 
                       icon={Icon} 
                       size={24} 
-                      // color={({ isActive }) => isActive ? "#000000" : "#6B7280"}
                     />
                   </div>
                   <span className="font-medium">{label}</span>
@@ -51,7 +49,7 @@ const Sidebar = () => {
           </ul>
         </div>
 
-        {/* User Profile Section */}
+      
         
       </div>
     </nav>

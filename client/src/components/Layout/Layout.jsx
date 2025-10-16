@@ -2,9 +2,12 @@ import React from 'react';
 import Sidebar from '../Sidebar';
 import { Routes, Route } from 'react-router-dom';
 import Home from '../../pages/Home.jsx';
-import Explore from '../../pages/Explore.jsx';
+// import Explore from '../../pages/Explore.jsx';
 import Notifications from '../../pages/Notifications.jsx';
 import Profile from '../../pages/Profile.jsx';
+import SearchPage from '../../pages/SearchPage.jsx';
+import Settings from '../../pages/Settings.jsx';
+import NotFound from '../../pages/NotFound.jsx';
 
 const Layout = () => {
   return (
@@ -15,11 +18,12 @@ const Layout = () => {
           <Routes>
             <Route path='/' element={<Home />} />
             <Route path='/profile' element={<Profile />} />
-            <Route path='/collab' element={<div>Collab</div>} />
+            {/* <Route path='/collab' element={} /> */}
             <Route path='/notification' element={<Notifications />} />
-            <Route path='/search' element={<div>Search</div>} />
-            <Route path='/settings' element={<div>Settings</div>} />
-            <Route path='/logout' element={<div>Logout</div>} />
+            <Route path='/search' element={<SearchPage/>} />
+            <Route path='/settings' element={<Settings/>} />
+            <Route path='/logout' element={<NotFound/>} />
+            <Route path='*' element={<NotFound/>} />
           </Routes>
         </main>
       </div>

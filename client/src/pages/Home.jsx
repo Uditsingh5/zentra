@@ -13,20 +13,40 @@ const PostBoxOpen = () => {
 const PostBoxClose = () => {
     setIsPostBox(!isPostBox);
   }
+
+
+const HomeTab = () => {
+  return (
+    <div className='max-w-3xl my-2 px-2 py-2 mx-auto text-gray-500 flex justify-between items-center select-none'>
+      <div className='flex items-center justify-center gap-3 cursor-text'>
+        <div className="w-14 h-14 rounded-full bg-gray-300 cursor-pointer"></div>
+        <h4>What's new with you?</h4>
+      </div>
+      <button className = {`bg-[#CE97FF] cursor-pointer text-gray-700 hover:text-gray-600 px-6 py-2 rounded-2xl`}>
+      Post
+    </button>
+    </div>
+  )
+}
+
+
 const Home = () => {
   const [isPostBox,setIsPostBox] = useState(false);
 
   return (
     <div className="w-full rounded-lg flex gap-1">
       {/* Main Feed */}
+
       <div className="h-auto basis-3/4 border-r border-gray-200">
+        <HomeTab/>
+        <div className='flex flex-col justify-center items-center gap-5 mt-4'>
+        <Postcard />
+        <Postcard />
+        
         <Postcard />
         <Postcard />
         <Postcard />
-        <Postcard />
-        <Postcard />
-        <Postcard />
-        <Postcard />
+        </div>
       </div>
 
       {/* Sidebar */}

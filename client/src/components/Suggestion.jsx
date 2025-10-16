@@ -4,7 +4,7 @@ import FollowButton from "./FollowButton";
 export default function Suggestion({ profiles = [] }) {
   return (
     <aside className="w-full max-w-xs rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      {/* Header */}
+      
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-900">Suggested for you</h2>
         #<a>
@@ -12,14 +12,14 @@ export default function Suggestion({ profiles = [] }) {
         </a>
       </div>
 
-      {/* Profile rows */}
+      
       <div className="space-y-3">
         {profiles.map((p) => (
           <div
             key={p.id}
             className="flex items-center justify-between rounded-lg p-2 hover:bg-gray-50"
           >
-            {/* Left: avatar + info */}
+         
             <div className="flex items-center gap-3">
               <img
                 src={p.avatar}
@@ -32,7 +32,7 @@ export default function Suggestion({ profiles = [] }) {
               </div>
             </div>
 
-            {/* Right: Follow button */}
+       
             <FollowButton
               classes="text-xs font-semibold text-blue-600 hover:text-blue-500 focus:outline-none"
               action={() => alert(`Followed ${p.username}`)}
