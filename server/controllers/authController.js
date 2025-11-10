@@ -41,7 +41,7 @@ export const signup = async (req, res) => {
         const token = genToken(saved._id);
         const { password: _pw, ...safeUser } = saved.toObject();
 
-        return res.status(201).json({ message: "SignUp Done!", token, user: safeUser });
+        return res.status(201).json({ message: "SignUp Done!", token,user:safeUser});
     } catch (err) {
         if (err?.code === 11000) {
             const field = Object.keys(err.keyPattern || {})[0] || "field";
@@ -85,7 +85,12 @@ export const login = async (req, res) => {
         }
         const token = genToken(user._id);
         console.log(`[✓] Logged in: ${user._id.toString()} (${user.email})`);
-        return res.status(200).json({ token });
+        return res.status(200).json({ token ,  user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+            },});
     } catch (err) {
         errorHandler(err, req, res);
         // console.error("[x] Login error:", err);

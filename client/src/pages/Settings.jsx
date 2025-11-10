@@ -1,37 +1,31 @@
-import { useRef, useState } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import { useSelector, useDispatch } from "react-redux"
+import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Settings01Icon,
   UserIcon,
   SecurityLockIcon,
   NotificationSquareIcon,
-  CheckmarkBadge01Icon,
-  Edit02Icon
-} from "@hugeicons/core-free-icons";
+  Edit02Icon,
+} from "@hugeicons/core-free-icons"
+
+import { fetchSettings, updateSettings, localUpdate, resetDirty } from "../slices/settingsSlice.js"
 
 
 const TAB_CONFIG = [
   { id: "general", label: "General", icon: Settings01Icon },
   { id: "profile", label: "Profile", icon: UserIcon },
   { id: "security", label: "Security", icon: SecurityLockIcon },
-  { id: "notifications", label: "Notifications", icon: NotificationSquareIcon },
-  { id: "subscription", label: "Subscription", icon: CheckmarkBadge01Icon },
-];
+  {
+    id: "notifications",
+    label: "Notifications",
+    icon: NotificationSquareIcon,
+  },
+]
 
-
-const THEME = {
-  pageBg: "#f5f5f5",
-  surface: "#ffffff",
-  surfaceAlt: "#fefefe",
-  border: "#e0e0e0",
-  text: "#1a1a1a",
-  textMuted: "#666666",
-  grayDeep: "#555555",
-  activeFill: "#f0f0f0",
-  ring: "#d0d0d0",
-};
-
-// Default settings
+// Default fallback if no settings loaded
 const DEFAULTS = {
   general: {
     username: "uditsingh_05",
@@ -59,344 +53,259 @@ const DEFAULTS = {
     comments: true,
     mentions: true,
   },
-  subscription: {
-    plan: "Pro",
-    status: "Active",
-  },
-};
-
-
-function useSettingsState() {
-  const [settings, setSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem("app.settings");
-      if (!saved) return DEFAULTS;
-      const parsed = JSON.parse(saved);
-      return {
-        general: { ...DEFAULTS.general, ...parsed.general },
-        profile: { ...DEFAULTS.profile, ...parsed.profile },
-        security: { ...DEFAULTS.security, ...parsed.security },
-        notifications: { ...DEFAULTS.notifications, ...parsed.notifications },
-        subscription: { ...DEFAULTS.subscription, ...parsed.subscription },
-      };
-    } catch {
-      return DEFAULTS;
-    }
-  });
-  const [dirty, setDirty] = useState(false);
-
-  const update = (section, key, value) => {
-    setSettings((prev) => ({
-      ...prev,
-      [section]: { ...prev[section], [key]: value },
-    }));
-    setDirty(true);
-  };
-
-  const save = () => {
-    localStorage.setItem("app.settings", JSON.stringify(settings));
-    setDirty(false);
-  };
-
-  return { settings, update, save, dirty };
 }
 
-
+// Toggle Component
 function Toggle({ checked, onChange }) {
   return (
     <button
       onClick={() => onChange(!checked)}
-      style={{
-        width: "44px",
-        height: "24px",
-        background: checked ? "#333333" : "#cccccc",
-        border: "none",
-        borderRadius: "12px",
-        cursor: "pointer",
-        position: "relative",
-        transition: "background 0.2s ease",
-      }}
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+        checked ? "bg-gray-800" : "bg-gray-300"
+      }`}
     >
       <div
-        style={{
-          position: "absolute",
-          width: "20px",
-          height: "20px",
-          background: "white",
-          borderRadius: "10px",
-          top: "2px",
-          left: checked ? "22px" : "2px",
-          transition: "left 0.2s ease",
-        }}
+        className={`absolute w-5 h-5 bg-white rounded-full top-0.5 transition-all duration-200 ${
+          checked ? "left-[22px]" : "left-0.5"
+        }`}
       />
     </button>
-  );
+  )
 }
 
-
+// SettingRow Component
 function SettingRow({ label, children, isLast = false }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "20px 0",
-        borderBottom: isLast ? "none" : `1px solid ${THEME.border}`,
-      }}
-    >
-      <span
-        style={{
-          fontSize: "15px",
-          color: THEME.text,
-          fontFamily: "system-ui, -apple-system, sans-serif",
-        }}
-      >
-        {label}
-      </span>
+    <div className={`flex items-center justify-between py-5 ${isLast ? "" : "border-b border-gray-200"}`}>
+      <span className="text-sm text-gray-800 font-sans">{label}</span>
       {children}
     </div>
-  );
+  )
 }
 
-
 export default function Settings() {
-  const [active, setActive] = useState("general");
-  const { settings, update, save, dirty } = useSettingsState();
-  const tablistRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const [editingUsername, setEditingUsername] = useState(false);
+  const dispatch = useDispatch()
 
-  const onTabKeyDown = (e) => {
-    if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
-    e.preventDefault();
-    const idx = TAB_CONFIG.findIndex((t) => t.id === active);
-    let nextIdx = idx;
-    if (e.key === "ArrowUp") nextIdx = (idx - 1 + TAB_CONFIG.length) % TAB_CONFIG.length;
-    if (e.key === "ArrowDown") nextIdx = (idx + 1) % TAB_CONFIG.length;
-    if (e.key === "Home") nextIdx = 0;
-    if (e.key === "End") nextIdx = TAB_CONFIG.length - 1;
-    setActive(TAB_CONFIG[nextIdx].id);
-  };
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
+
+  // Get userId from Redux global state
+  const userId = useSelector(state => state.user?.userInfo?.userId || state.user?.userInfo?._id)
+  const { data: settingsState, loading, error, dirty } = useSelector((state) => state.settings)
+
+
+  
+  const [settings, setSettings] = useState(DEFAULTS)
+  const [active, setActive] = useState("general")
+  const tablistRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
+
+  // Load settings from Redux when userId is available
+  useEffect(() => {
+    if (userId && !hasInitialized) {
+      console.log("Fetching settings for userId:", userId)
+      dispatch(fetchSettings(userId))
+      setHasInitialized(true)
+    }
+  }, [dispatch, userId, hasInitialized])
+
+  // Update local settings when Redux state changes
+  useEffect(() => {
+    if (settingsState && Object.keys(settingsState).length > 0) {
+      console.log("Updating local settings:", settingsState)
+      setSettings(settingsState)
+    }
+  }, [settingsState])
+
+  const handleLocalUpdate = (section, key, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [section]: { ...prev[section], [key]: value },
+    }))
+    dispatch(localUpdate({ section, key, value }))
+  }
+
+  const handleSave = async () => {
+    // Validate userId exists
+    if (!userId) {
+      console.error("Save failed - userId is missing")
+      setSaveError("User ID not found. Please refresh the page.")
+      return
+    }
+
+    // Validate settings exist
+    if (!settings || Object.keys(settings).length === 0) {
+      console.error("Save failed - settings is empty")
+      setSaveError("No settings to save. Please reload.")
+      return
+    }
+
+    setSaving(true)
+    setSaveError(null)
+
+    try {
+      console.log("Starting save with data:", { userId, settings })
+      
+      // Unwrap the async thunk to handle success/error properly
+      const result = await dispatch(updateSettings({ userId, updatedSettings: settings })).unwrap()
+      
+      console.log("Save successful, result:", result)
+      
+      // Reset dirty flag after successful save
+      dispatch(resetDirty())
+      
+    } catch (err) {
+      console.error("Failed to save settings:", err)
+      const errorMsg = err?.message || "Failed to save settings. Please try again."
+      setSaveError(errorMsg)
+      alert(`Error: ${errorMsg}`)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleProfilePictureChange = (e) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = (event) => {
-        update("profile", "profilePicture", event.target.result);
-      };
-      reader.readAsDataURL(file);
+        handleLocalUpdate("profile", "profilePicture", event.target.result)
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
+
+  if (!userId) {
+    return <div className="p-10 text-gray-800 text-lg font-semibold">Please log in first</div>
+  }
+  if (loading) return <div className="p-10 text-gray-800">Loading settings...</div>
+  if (error) return <div className="p-10 text-red-500">Error: {typeof error === 'string' ? error : JSON.stringify(error)}</div>
+
+  const onTabKeyDown = (e) => {
+    if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return
+    e.preventDefault()
+    const idx = TAB_CONFIG.findIndex((t) => t.id === active)
+    let nextIdx = idx
+    if (e.key === "ArrowUp") nextIdx = (idx - 1 + TAB_CONFIG.length) % TAB_CONFIG.length
+    if (e.key === "ArrowDown") nextIdx = (idx + 1) % TAB_CONFIG.length
+    if (e.key === "Home") nextIdx = 0
+    if (e.key === "End") nextIdx = TAB_CONFIG.length - 1
+    setActive(TAB_CONFIG[nextIdx].id)
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: THEME.pageBg,
-        padding: "40px 20px",
-        paddingBottom: "120px",
-      }}
-    >
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <div style={{ display: "flex", minHeight: "600px" }}>
-          {/* Sidebar Navigation */}
+    <div className="min-h-screen bg-gray-100 p-5 pb-32 md:p-10 font-sans">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex min-h-[600px]">
+          {/* Sidebar */}
           <div
             ref={tablistRef}
             role="tablist"
             onKeyDown={onTabKeyDown}
-            style={{
-              width: "240px",
-              background: THEME.surface,
-              border: `1px solid ${THEME.border}`,
-              borderRadius: "16px",
-              borderBottomRightRadius:'0',
-              borderTopRightRadius:'0',
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              height: "auto",
-            }}
+            className="w-60 bg-white border border-gray-200 rounded-2xl rounded-r-none p-5 flex flex-col gap-2 h-auto"
           >
             {TAB_CONFIG.map((tab) => {
-              const isActive = tab.id === active;
+              const isActive = tab.id === active
               return (
                 <button
                   key={tab.id}
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setActive(tab.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    padding: "12px 16px",
-                    background: isActive ? THEME.activeFill : "transparent",
-                    border: `1px solid ${isActive ? THEME.border : "transparent"}`,
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    color: THEME.text,
-                    fontSize: "14px",
-                    fontWeight: isActive ? "600" : "500",
-                    transition: "all 0.2s",
-                    fontFamily: "system-ui, -apple-system, sans-serif",
-                  }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-gray-100 border border-gray-200 font-semibold text-gray-800"
+                      : "border border-transparent font-medium text-gray-800 hover:bg-gray-50"
+                  }`}
                 >
                   <HugeiconsIcon icon={tab.icon} size={20} />
                   <span>{tab.label}</span>
                 </button>
-              );
+              )
             })}
           </div>
 
-          {/* Right Content */}
-          <div
-            style={{
-              flex: 1,
-              background: THEME.surface,
-              border: `1px solid ${THEME.border}`,
-              borderLeft: '0px',
-              borderRadius: "16px",
-              borderTopLeftRadius:'0px',
-              borderBottomLeftRadius:'0px',
-              padding: "32px",
-              overflow: "auto",
-            }}
-          >
-            {/* General Tab */}
+          {/* Right Panel */}
+          <div className="flex-1 bg-white border border-l-0 border-gray-200 rounded-2xl rounded-l-none p-8 overflow-auto">
             {active === "general" && (
               <div>
-                <h2
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: "600",
-                    color: THEME.text,
-                    marginBottom: "32px",
-                    fontFamily: "system-ui, -apple-system, sans-serif",
-                  }}
-                >
-                  General
-                </h2>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-8 font-sans">General</h2>
+
                 <SettingRow label="Username">
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div className="flex items-center gap-3">
                     {editingUsername ? (
                       <input
                         type="text"
-                        value={DEFAULTS.general.username}
-                        onChange={(e) => update("general", "username", e.target.value)}
+                        value={settings.general?.username || ""}
+                        onChange={(e) => handleLocalUpdate("general", "username", e.target.value)}
                         onBlur={() => setEditingUsername(false)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") setEditingUsername(false);
+                          if (e.key === "Enter") setEditingUsername(false)
                         }}
-                        style={{
-                          padding: "4px 8px",
-                          border: `1px solid ${THEME.border}`,
-                          borderRadius: "4px",
-                          fontSize: "14px",
-                          color: THEME.text,
-                          background: THEME.surface,
-                          fontFamily: "system-ui, -apple-system, sans-serif",
-                        }}
+                        className="px-2 py-1 border border-gray-200 rounded text-sm text-gray-800 bg-white font-sans"
+                        autoFocus
                       />
                     ) : (
-                      <span style={{ fontSize: "14px", color: THEME.textMuted }}>
-                        {DEFAULTS.general.username}
+                      <span className="text-sm text-gray-600 font-sans">
+                        {settings.general?.username || "Unnamed User"}
                       </span>
                     )}
                     <button
                       onClick={() => setEditingUsername(!editingUsername)}
-                      style={{
-                        padding: "4px 8px",
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        color: THEME.textMuted,
-                      }}
+                      className="p-1 bg-transparent border-none cursor-pointer text-sm text-gray-600"
                     >
-                      <HugeiconsIcon icon={Edit02Icon} size={16}/>
+                      <HugeiconsIcon icon={Edit02Icon} size={16} />
                     </button>
                   </div>
                 </SettingRow>
 
                 <SettingRow label="Email">
-                  <span style={{ fontSize: "14px", color: THEME.textMuted }}>
-                    {settings.general.email}
-                  </span>
+                  <span className="text-sm text-gray-600">{settings.general?.email}</span>
                 </SettingRow>
 
                 <SettingRow label="Enable auto-prompt idea suggestion">
                   <Toggle
-                    checked={settings.general.autoPrompt}
-                    onChange={(val) => update("general", "autoPrompt", val)}
+                    checked={!!settings.general?.autoPrompt}
+                    onChange={(val) => handleLocalUpdate("general", "autoPrompt", val)}
                   />
                 </SettingRow>
 
                 <SettingRow label="Auto-play video on Explore">
                   <Toggle
-                    checked={settings.general.autoPlay}
-                    onChange={(val) => update("general", "autoPlay", val)}
+                    checked={!!settings.general?.autoPlay}
+                    onChange={(val) => handleLocalUpdate("general", "autoPlay", val)}
                   />
                 </SettingRow>
 
-                <SettingRow label="Publish to Explore">
+                <SettingRow label="Publish on Explore">
                   <Toggle
-                    checked={settings.general.publishExplore}
-                    onChange={(val) => update("general", "publishExplore", val)}
+                    checked={!!settings.general?.publishExplore}
+                    onChange={(val) => handleLocalUpdate("general", "publishExplore", val)}
                   />
                 </SettingRow>
 
-                <SettingRow label="Language" isLast>
-                  <select
-                    value={settings.general.language}
-                    onChange={(e) => update("general", "language", e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                      cursor: "pointer",
-                      fontFamily: "system-ui, -apple-system, sans-serif",
-                    }}
-                  >
-                    <option>Auto detect</option>
-                    <option>English</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                  </select>
+                <SettingRow label="Language">
+                  <span className="text-sm text-gray-600">{settings.general?.language}</span>
                 </SettingRow>
               </div>
             )}
 
-            {/* Profile Tab */}
             {active === "profile" && (
               <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "600", color: THEME.text, marginBottom: "32px" }}>
-                  Profile
-                </h2>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-8 font-sans">Profile</h2>
 
                 <SettingRow label="Profile Picture">
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div className="flex items-center gap-3">
                     <img
-                      src={DEFAULTS.profile.profilePicture || "/placeholder.svg"}
+                      src={settings.profile?.profilePicture || "/placeholder.svg"}
                       alt="Profile"
-                      style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }}
+                      className="w-10 h-10 rounded-full object-cover"
                     />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      style={{
-                        padding: "8px 12px",
-                        border: `1px solid ${THEME.border}`,
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        color: THEME.text,
-                        background: THEME.activeFill,
-                        cursor: "pointer",
-                      }}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-gray-100 cursor-pointer font-sans"
                     >
                       Upload
                     </button>
@@ -405,7 +314,7 @@ export default function Settings() {
                       type="file"
                       accept="image/*"
                       onChange={handleProfilePictureChange}
-                      style={{ display: "none" }}
+                      className="hidden"
                     />
                   </div>
                 </SettingRow>
@@ -413,219 +322,133 @@ export default function Settings() {
                 <SettingRow label="Name">
                   <input
                     type="text"
-                    value={settings.profile.name}
-                    onChange={(e) => update("profile", "name", e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.profile?.name || ""}
+                    onChange={(e) => handleLocalUpdate("profile", "name", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
 
                 <SettingRow label="Bio">
                   <input
                     type="text"
-                    value={settings.profile.bio}
-                    onChange={(e) => update("profile", "bio", e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.profile?.bio || ""}
+                    onChange={(e) => handleLocalUpdate("profile", "bio", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
 
                 <SettingRow label="Location">
                   <input
                     type="text"
-                    value={settings.profile.location}
-                    onChange={(e) => update("profile", "location", e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.profile?.location || ""}
+                    onChange={(e) => handleLocalUpdate("profile", "location", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
 
-                <SettingRow label="Website" isLast>
+                <SettingRow label="Website">
                   <input
                     type="text"
-                    value={settings.profile.website}
-                    onChange={(e) => update("profile", "website", e.target.value)}
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.profile?.website || ""}
+                    onChange={(e) => handleLocalUpdate("profile", "website", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
               </div>
             )}
 
-            {/* Security Tab */}
             {active === "security" && (
               <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "600", color: THEME.text, marginBottom: "32px" }}>
-                  Security
-                </h2>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-8 font-sans">Security</h2>
+
+                <SettingRow label="Two-factor authentication">
+                  <Toggle
+                    checked={!!settings.security?.twoFA}
+                    onChange={(val) => handleLocalUpdate("security", "twoFA", val)}
+                  />
+                </SettingRow>
 
                 <SettingRow label="Current Password">
                   <input
                     type="password"
-                    value={settings.security.currentPassword}
-                    onChange={(e) => update("security", "currentPassword", e.target.value)}
-                    placeholder="Enter current password"
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.security?.currentPassword || ""}
+                    onChange={(e) => handleLocalUpdate("security", "currentPassword", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
 
                 <SettingRow label="New Password">
                   <input
                     type="password"
-                    value={settings.security.newPassword}
-                    onChange={(e) => update("security", "newPassword", e.target.value)}
-                    placeholder="Enter new password"
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.security?.newPassword || ""}
+                    onChange={(e) => handleLocalUpdate("security", "newPassword", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
                 </SettingRow>
 
-                <SettingRow label="Confirm Password">
+                <SettingRow label="Confirm Password" isLast>
                   <input
                     type="password"
-                    value={settings.security.confirmPassword}
-                    onChange={(e) => update("security", "confirmPassword", e.target.value)}
-                    placeholder="Confirm new password"
-                    style={{
-                      padding: "8px 12px",
-                      border: `1px solid ${THEME.border}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      color: THEME.text,
-                      background: THEME.surface,
-                    }}
+                    value={settings.security?.confirmPassword || ""}
+                    onChange={(e) => handleLocalUpdate("security", "confirmPassword", e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white font-sans"
                   />
-                </SettingRow>
-
-                <SettingRow label="Two-factor authentication" isLast>
-                  <Toggle checked={settings.security.twoFA} onChange={(val) => update("security", "twoFA", val)} />
                 </SettingRow>
               </div>
             )}
 
-            {/* Notifications Tab */}
             {active === "notifications" && (
               <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "600", color: THEME.text, marginBottom: "32px" }}>
-                  Notifications
-                </h2>
+                <h2 className="text-2xl font-semibold text-gray-800 mb-8 font-sans">Notifications</h2>
 
                 <SettingRow label="Likes">
-                  <Toggle checked={settings.notifications.likes} onChange={(val) => update("notifications", "likes", val)} />
+                  <Toggle
+                    checked={!!settings.notifications?.likes}
+                    onChange={(val) => handleLocalUpdate("notifications", "likes", val)}
+                  />
                 </SettingRow>
 
                 <SettingRow label="Comments">
-                  <Toggle checked={settings.notifications.comments} onChange={(val) => update("notifications", "comments", val)} />
+                  <Toggle
+                    checked={!!settings.notifications?.comments}
+                    onChange={(val) => handleLocalUpdate("notifications", "comments", val)}
+                  />
                 </SettingRow>
 
                 <SettingRow label="Mentions" isLast>
-                  <Toggle checked={settings.notifications.mentions} onChange={(val) => update("notifications", "mentions", val)} />
-                </SettingRow>
-              </div>
-            )}
-
-            {/* Subscription Tab */}
-            {active === "subscription" && (
-              <div>
-                <h2 style={{ fontSize: "24px", fontWeight: "600", color: THEME.text, marginBottom: "32px" }}>
-                  Subscription
-                </h2>
-
-                <SettingRow label="Plan">
-                  <span style={{ fontSize: "14px", color: THEME.textMuted }}>{settings.subscription.plan}</span>
-                </SettingRow>
-
-                <SettingRow label="Status" isLast>
-                  <span style={{ fontSize: "14px", color: THEME.textMuted }}>{settings.subscription.status}</span>
+                  <Toggle
+                    checked={!!settings.notifications?.mentions}
+                    onChange={(val) => handleLocalUpdate("notifications", "mentions", val)}
+                  />
                 </SettingRow>
               </div>
             )}
           </div>
         </div>
 
-        <div
-          style={{
-            position: "fixed",
-            bottom: "32px",
-            right: "48px",
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          {dirty && (
-            <span
-              style={{
-                padding: "10px 16px",
-                fontSize: "13px",
-                color: THEME.textMuted,
-                background: THEME.surface,
-                borderRadius: "8px",
-                border: `1px solid ${THEME.border}`,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            >
+        {/* Save Button */}
+        <div className="fixed bottom-8 right-12 flex gap-3 items-center z-50">
+          {saveError && (
+            <span className="px-4 py-2.5 text-xs text-red-600 bg-red-50 rounded-lg border border-red-200 shadow-md font-sans">
+              {saveError}
+            </span>
+          )}
+          {dirty && !saveError && (
+            <span className="px-4 py-2.5 text-xs text-gray-600 bg-white rounded-lg border border-gray-200 shadow-md font-sans">
               Unsaved changes
             </span>
           )}
           <button
-            onClick={save}
-            disabled={!dirty}
-            style={{
-              padding: "10px 20px",
-              background: dirty ? "#333333" : THEME.activeFill,
-              border: `1px solid ${dirty ? "#333333" : THEME.border}`,
-              borderRadius: "8px",
-              cursor: dirty ? "pointer" : "not-allowed",
-              fontSize: "14px",
-              fontWeight: "600",
-              color: dirty ? "white" : THEME.textMuted,
-              boxShadow: dirty ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
-              transition: "all 0.2s",
-            }}
+            onClick={handleSave}
+            disabled={saving || !userId || !dirty}
+            className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 font-sans  border ${(saving || !userId || !dirty)?`cursor-not-allowed bg-gray-700 border-gray-400 text-white shadow-lg hover:shadow-lg `:
+             ` cursor-pointer bg-gray-900 border-gray-800 text-white shadow-md hover:shadow-lg `
+            }`}
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
     </div>
-  );
+  )
 }

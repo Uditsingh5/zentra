@@ -34,45 +34,6 @@ const userSchema = new mongoose.Schema({
       return value[0] === '@';
     }
   },
-  bio: {
-    type: String,
-    required: false
-  },
-  location: {
-    type: String,
-    required: false
-  },
-  skills: {
-    type: [String],
-    default: [],
-    required: false
-  },
-  avatar: {
-    type: String,
-    default: '',
-    required: false
-  },
-
-  // Settings Preferences
-
-  preferences: {
-    type: Object,
-    required: false,
-    default: {
-      "isPrivateAccount": true,
-      "activeNotifications": true,
-      "enabled2fa": false,
-      "theme": "system"
-    }
-  },
-  Followers: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'user',
-  },
-  Following: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'user',
-  },
   createdAt: {
     type: Date,
     default: Date.now

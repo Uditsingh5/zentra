@@ -6,6 +6,11 @@ const notificationSchema = new mongoose.Schema({
     ref: 'user',
     required: true,
   },
+  senderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
+    required: true,
+  },
   postId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'post',
@@ -16,9 +21,13 @@ const notificationSchema = new mongoose.Schema({
     enum: ['like', 'comment', 'follow'],
     required: true,
   },
+  read: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now()
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import PostCard from "../components/PostCard"; // import your existing PostCard
+import PostCard from "../components/Post/PostCard.jsx"; // import your existing PostCard
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Settings01Icon, Location01Icon, Calendar01Icon, Link01Icon } from "@hugeicons/core-free-icons";
 

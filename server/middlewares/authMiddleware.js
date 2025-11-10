@@ -1,29 +1,29 @@
 import jwt from "jsonwebtoken";
 
-// errorHandler imports
 import { customError } from "../utils/errorProvider.js";
-import { errorHandler } from "../middlewares/errorHandler.js";
+import User from "../models/User.js";
 
-const verifyJwt = (req,res,next) => {
-    const token = req.header('Authorization')?.split(" ")[1];
-    
-    if(!token){
-      // return res.sendStatus(401);
-      throw customError("UNAUTHORIZED");
-    }
-    try{
-      const decoded = jwt.verify(token,process.env.JWT_SECRET);
-      
-      req.userId = decoded?.sub ?? decoded?.user ?? decoded?.id ?? decoded;
-      if(!req.userId){
-        // return res.sendStatus(401);
-        throw customError("UNAUTHORIZED");
-      }
-      next();
-    }catch(err){
-      // return res.sendStatus(401);
-      errorHandler(err, req, res, next);
-    }
-}
+const verifyJwt = async (req, res, next) => {
+  try {
+    const authHeader = req.header("Authorization");
+
+    if (!authHeader) throw customError("UNAUTHORIZED");
+
+
+    const token = authHeader.split(" ")[1];
+    if (!token) throw customError("UNAUTHORIZED");
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded?.sub ?? decoded?.user ?? decoded?.id ?? decoded;
+
+    const user = await User.findById(userId).select("-password");
+    if (!user) throw customError("UNAUTHORIZED");
+
+    req.user = user;
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, message: err.message || "Unauthorized" });
+  }
+};
 
 export default verifyJwt;

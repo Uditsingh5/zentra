@@ -1,6 +1,6 @@
 // SearchPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import PostCard from "../components/PostCard.jsx";
+import PostCard from "../components/Post/PostCard.jsx";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Search01Icon } from "@hugeicons/core-free-icons";
 

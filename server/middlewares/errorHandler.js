@@ -1,5 +1,5 @@
 // Error Handling Middleware
-import { errorCatalogue,customError } from "../utils/errorProvider.js";
+import { errorCatalogue, customError } from "../utils/errorProvider.js";
 
 export const errorHandler = (err,req,res,next) => {
 

@@ -1,26 +1,31 @@
-import express from 'express';
-import upload from '../middlewares/multer.js';
+import express from "express";
+import upload, { handleUploadError } from "../middlewares/multer.js";
 
 const uploadRouter = express.Router();
 
-// single file upload
+uploadRouter.post("/single", async (req, res) => {
+  try {
+    
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        return handleUploadError(err, req, res);
+      }
 
-uploadRouter.post("/single", upload.single("file"), (req, res) => {
-   try {
-      console.log(req.file);
+      if (!req.file) {
+        return res.status(400).json({ message: "No file provided" });
+      }
+
       return res.status(200).json({
-         message: "File uploaded successfully",
-         file: req.file
+        message: "File uploaded successfully",
+        file: req.file,
       });
-   } catch (error) {
-      return res.status(500).json({
-         message: "File upload failed",
-         error: error.message
-      });
-   }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unexpected error during file upload",
+      error: error.message,
+    });
+  }
 });
 
 export default uploadRouter;
-
-
-// Unable to handle errors from multer. Need to check later. mainly the upload limits and file type errors.
