@@ -1,11 +1,18 @@
 import User from "../models/User.js";
-
+import Profile from "../models/ProfileSchema.js";
 import bcrypt from "bcrypt";
 import bcryptUtil from "../utils/bcryptUtil.js";
 import genToken from "../services/auth.js";
 
 import { customError } from "../utils/errorProvider.js";
 import { errorHandler } from "../middlewares/errorHandler.js";
+import crypto from "crypto";
+
+function generateUsername(name) {
+  const first = name.split(" ")[0].toLowerCase();
+  const shortId = crypto.randomBytes(2).toString("hex");
+  return `@${first}_${shortId}`;
+}
 
 export const signup = async (req, res) => {
     try {
@@ -40,6 +47,16 @@ export const signup = async (req, res) => {
 
         const token = genToken(saved._id);
         const { password: _pw, ...safeUser } = saved.toObject();
+
+        const ProfileData = {
+            userId : safeUser._id,
+            email: safeUser.email,
+            display_name: safeUser.name,
+            username: generateUsername(safeUser.name)
+        }
+        const profile = await Profile.create(ProfileData)
+        console.log(profile)
+        profile.save()
 
         return res.status(201).json({ message: "SignUp Done!", token,user:safeUser});
     } catch (err) {

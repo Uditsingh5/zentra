@@ -1,6 +1,6 @@
 import express from "express";
 import Settings from "../models/Settings.js"; // Adjust path as needed
-
+import Profile from "../models/ProfileSchema.js";
 const router = express.Router();
 
 
@@ -11,11 +11,13 @@ router.get("/api/settings/:userId", async (req, res) => {
     let settings = await Settings.findOne({ userId });
 
     if (!settings) {
+      const userProfile = await Profile.findOne({userId : userId});
+
       settings = new Settings({
         userId,
         general: {
-          username: "user",
-          email: "user@example.com",
+          username: userProfile.username,
+          email: userProfile.email,
           autoPrompt: true,
           autoPlay: true,
           publishExplore: false,
@@ -24,11 +26,11 @@ router.get("/api/settings/:userId", async (req, res) => {
           timezone: "UTC+0",
         },
         profile: {
-          name: "",
-          bio: "",
-          location: "",
+          name: userProfile.display_name,
+          bio: userProfile.bio,
+          location: userProfile.location,
           website: "",
-          avatar: "",
+          avatar: userProfile.avatar,
         },
         security: {
           twoFA: false,
@@ -63,7 +65,6 @@ router.put("/api/settings/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const updatedSettings = req.body;
-
 
     const settings = await Settings.findOneAndUpdate(
       { userId },

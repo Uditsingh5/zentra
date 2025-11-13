@@ -8,6 +8,7 @@ import postRoute from "./routes/postRoutes.js"
 import userRouter from "./routes/userRoutes.js"
 import settingsRoute from "./routes/settingsRoutes.js"
 import commentRoute from "./routes/commentRoutes.js"
+import profileRoute from "./routes/profileRoutes.js"
 import uploadRouter from "./routes/upload.js"
 // import { errorHandler } from "./middlewares/errorHandler.js"
 import cors from "cors"
@@ -68,6 +69,8 @@ app.use("/api/upload",uploadRouter);
 app.get("/", (req, res) => {
   res.send('<h1>Zentra ki taraf se Ram Ram🙏!!</h1>');
 })
+app.get("/:id", profileRoute);
+app.get("/profile/:id", profileRoute);
 
 
 // custom error handler -> use Global Error Handler only after all routes are able to throw customErrors to it

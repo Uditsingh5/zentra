@@ -1,48 +1,81 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PostCard from "../components/Post/PostCard.jsx"; // import your existing PostCard
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Settings01Icon, Location01Icon, Calendar01Icon, Link01Icon } from "@hugeicons/core-free-icons";
-
+import { useSelector,useDispatch } from "react-redux";
+import axios
+ from "axios";
 export default function ProfilePage() {
+  const userId = useSelector((state)=>state.user?.userInfo?.userId);
+  const [profile,setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [isFollowing, setIsFollowing] = useState(false);
 
-  const profile = {
-    name: "Udit Singh",
-    username: "@uditcodes",
-    bio: "Full Stack Developer ⚡ | Building Zentra 💻 | Passionate about clean design & scalable systems 🚀",
-    location: "Bengaluru, India",
-    joined: "March 2023",
-    website: "zentra.in",
-    followers: 1280,
-    following: 256,
-    postsCount: 42,
-    avatar: "https://i.pravatar.cc/100?img=56",
-    tags: ["#ReactJS", "#FullStack", "#OpenSource", "#DevLife"],
-  };
+  useEffect(()=>{
+    const fetchProfile = async ()=>{
+      try {
+        const res = await axios.get(`/api/profile/${userId}`);
+        setProfile(res.data);
+      } catch (err) {
+        console.error("Fetch profile error:", err);
+      }
+    }
+    fetchProfile()
+  },[userId]);
 
-  const about = {
-    summary: [
-      "💻 Full-stack developer passionate about AI/ML",
-      "🎓 Currently working on Zentra project",
-      "🚀 Love building products that make a difference",
-      "📚 Always learning something new!",
-    ],
-    longBio: [
-      "Full-stack developer with experience in building scalable web apps and interactive UIs.",
-      "Passionate about solving real-world problems using modern web technologies.",
-    ],
-    experience: [
-      "🏢 Full Stack Developer at Zentra",
-      "💻 Open Source Contributor",
-    ],
-  };
+  // const profile = {
+  //   name: "Udit Singh",
+  //   username: "@uditcodes",
+  //   bio: "Full Stack Developer ⚡ | Building Zentra 💻 | Passionate about clean design & scalable systems 🚀",
+  //   location: "Bengaluru, India",
+  //   joined: "March 2023",
+  //   website: "zentra.in",
+  //   followers: 1280,
+  //   following: 256,
+  //   postsCount: 42,
+  //   avatar: "https://i.pravatar.cc/100?img=56",
+  //   tags: ["#ReactJS", "#FullStack", "#OpenSource", "#DevLife"],
+  // };
 
-  const skills = {
-    languages: ["JavaScript", "Python", "TypeScript", "C++"],
-    frameworks: ["React", "Node.js", "Express", "Next.js"],
-    tools: ["Git", "Docker", "AWS", "PostgreSQL"],
-  };
+  // const about = {
+  //   summary: [
+  //     "💻 Full-stack developer passionate about AI/ML",
+  //     "🎓 Currently working on Zentra project",
+  //     "🚀 Love building products that make a difference",
+  //     "📚 Always learning something new!",
+  //   ],
+  //   longBio: [
+  //     "Full-stack developer with experience in building scalable web apps and interactive UIs.",
+  //     "Passionate about solving real-world problems using modern web technologies.",
+  //   ],
+  //   experience: [
+  //     "🏢 Full Stack Developer at Zentra",
+  //     "💻 Open Source Contributor",
+  //   ],
+  // };
+
+  // const skills = {
+  //   languages: ["JavaScript", "Python", "TypeScript", "C++"],
+  //   frameworks: ["React", "Node.js", "Express", "Next.js"],
+  //   tools: ["Git", "Docker", "AWS", "PostgreSQL"],
+  // };
+    const {
+    display_name = "Unknown User",
+    username = "@unknown",
+    bio = "No bio available",
+    location = "Unknown",
+    website = "example.com",
+    avatar = "avatar.png",
+    followers = [],
+    following = [],
+    createdAt,
+    skills = [],
+  } = profile;
+
+  const joinedDate = new Date(createdAt).toLocaleString("default", {
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 ">

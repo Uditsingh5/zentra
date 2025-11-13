@@ -15,7 +15,7 @@ import {
 
 import ThemeToggler from "./ThemeToggler.jsx";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { clearUser } from "../../slices/userSlice.js";
 
 const navItems = [
@@ -23,16 +23,20 @@ const navItems = [
     { label: "Search", to: "/search", icon: Search01Icon },
     { label: "Profile", to: "/profile", icon: User03Icon },
     { label: "Notification", to: "/notification", icon: Notification01Icon },
+    { label: "Settings", to: "/settings", icon: Settings01Icon },
     // { label: "Collab", to: "/collab", icon: UserMultiple02Icon },
-    { label: "Settings",  to: "/settings", icon: Settings01Icon },
-    { label: "Login", to: "/login", icon: LoginSquare01Icon },
+    // { label: "Login", to: "/login", icon: LoginSquare01Icon },
     // { label: "Logout", to: "/logout", icon: LogoutSquare01Icon },
 ];
 
 const Sidebar = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const handleLogout = () => {
+    const { isLoggedIn, userInfo } = useSelector((state) => state.user);
+    const handleLog = () => {
+        if (!isLoggedIn) {
+            return navigate("/login");
+        }
         localStorage.removeItem("token");
         dispatch(clearUser());
         navigate("/login", { replace: true });
@@ -73,14 +77,13 @@ const Sidebar = () => {
                         ))}
                         <li>
                             <button
-                                onClick={handleLogout}
-                                className="cursor-pointer flex items-center gap-4 px-4 py-3 rounded-2xl text-lg font-medium text-red-700 hover:bg-red-200 hover:text-red-700 w-full"
-                            >
+                                onClick={handleLog}
+                                className={`cursor-pointer flex items-center gap-4 px-4 py-3 rounded-2xl text-lg font-medium w-full text-gray-800 hover:bg-gray-200 ${isLoggedIn &&"text-red-700 hover:bg-red-200 hover:text-red-700"}`}>
                                 <HugeiconsIcon
                                     icon={LogoutSquare01Icon}
                                     size={24}
                                 />{" "}
-                                Logout
+                                {isLoggedIn ? "Logout" : "Login"}
                             </button>
                         </li>
                     </ul>

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Settings from "../models/Settings.js";
+import Profile from "../models/ProfileSchema.js";
 export const getUser = async (req, res) => {
     try {
         const id = req.params.id;
@@ -46,16 +47,16 @@ export const getSettings = async (req, res) => {
       return res.status(400).json({ error: "Invalid userId" });
     }
 
-    const objectId = new mongoose.Types.ObjectId(userId);
 
-    let settings = await Settings.findOne({ userId: objectId });
+    let settings = await Settings.findOne({ userId });
+    let userProfile = await Profile.findOne({ userId });
 
     if (!settings) {
       settings = new Settings({
-        userId: objectId,
+        userId,
         general: {
-          username: "user",
-          email: "user@example.com",
+          username: userProfile.username,
+          email: userProfile.email,
           autoPrompt: true,
           autoPlay: true,
           publishExplore: false,
@@ -64,11 +65,11 @@ export const getSettings = async (req, res) => {
           timezone: "UTC+0",
         },
         profile: {
-          name: "",
-          bio: "",
-          location: "",
-          website: "",
-          avatar: "",
+          name: userProfile.display_name,
+          bio: userProfile.bio,
+          location: userProfile.location,
+          website: userProfile.website,
+          avatar: userProfile.avatar,
         },
         security: {
           twoFA: false,
@@ -109,11 +110,9 @@ export const updateSettings = async (req, res) => {
       return res.status(400).json({ error: "Invalid userId" });
     }
 
-    const objectId = new mongoose.Types.ObjectId(userId);
-
     // Find and update settings, or create if doesn't exist
     const settings = await Settings.findOneAndUpdate(
-      { userId: objectId },
+      { userId },
       updatedSettings,
       { new: true, upsert: true, runValidators: true }
     );

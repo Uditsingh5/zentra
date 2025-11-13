@@ -4,7 +4,11 @@ const profileSchema = new mongoose.Schema({
 
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'user',
+    ref: 'User',
+    required: true,
+  },
+  email: {
+    type: String,
     required: true,
   },
   
@@ -17,6 +21,8 @@ const profileSchema = new mongoose.Schema({
     type: String,
     required: false,
     lowercase: true,
+    default: "",
+    // Default username fn bnana hai abhi !
     validate: (value) => {
       if (!value || typeof value !== 'string') return true;
       return value[0] === '@';
@@ -24,15 +30,22 @@ const profileSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    default: "",
+    default: "avatar.png",
     required: false
   },
   bio: {
     type: String,
+    default: "",
     required: false
   },
   location: {
     type: String,
+    default: "India",
+    required: false
+  },
+  website: {
+    type: String,
+    default: "website-url",
     required: false
   },
   skills: {
@@ -42,37 +55,18 @@ const profileSchema = new mongoose.Schema({
   },
 
   // Settings Preferences
-
-  preferences: {
-    type: Object,
-    required: false,
-    default: {
-      "dataSharing": false,
-      "isPrivateAccount": true,
-      "enabled2fa": false,
-      "theme": "system",
-      "language": "en",
-      "location" : "India",
-      "activeNotifications": true,
-      "likeNotifications": true,
-      "commentNotifications": true,
-      "followNotifications": true,
-      "mentionNotifications": true ,
-
-    }
-  },
   publicProfile: {
     type: Boolean,
-    default: true,
+    default: false,
     required: false
   },
   followers: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: 'user',
+    ref: 'User',
   },
   following: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: 'user',
+    ref: 'User',
   },
   createdAt: {
     type: Date,
