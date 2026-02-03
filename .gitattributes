@@ -1,0 +1,13 @@
+# if you are on Windows and want to handle line endings automatically, run the following command:
+# git config --global core.autocrlf true    
+
+# then add this line to your .gitattributes file:
+* text=auto
+
+
+# not proccess to commit
+
+# git add .
+# git add .gitattributes
+# git commit -m "your commit message"
+# git push

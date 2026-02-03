@@ -1,0 +1,15 @@
+{
+  "name": "zentra",
+  "private": true,
+  "scripts": {
+    "start": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev": "npm run start",
+    "build": "npm run build --prefix client",
+    "start:prod": "npm run build --prefix client && npm run start --prefix server",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
