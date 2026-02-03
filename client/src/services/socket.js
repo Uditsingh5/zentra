@@ -2,8 +2,13 @@ import { io } from "socket.io-client";
 
 let socket = null;
 
-const getSocketUrl = () =>
-  import.meta.env.VITE_SOCKET_URL || window.location.origin;
+const getSocketUrl = () => {
+  const socketUrl = import.meta.env.VITE_SOCKET_URL;
+  if (socketUrl) {
+    return socketUrl.replace(/\/$/, "");
+  }
+  return window.location.origin;
+};
 
 export const initSocket = (userId) => {
   if (socket && socket.connected) {
