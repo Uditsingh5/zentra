@@ -134,47 +134,6 @@ The server serves the built frontend from `client/dist` when `NODE_ENV=productio
 
 ---
 
-## Deploy frontend on Vercel
-
-Zentra uses **Socket.IO** and a long-lived Node server, so the **backend cannot run on Vercel** (Vercel is serverless). Deploy the **frontend (client)** on Vercel and the **backend** on a Node host (e.g. Railway, Render).
-
-### Step 1: Deploy the backend first (Railway / Render / similar)
-
-1. Push your code to GitHub (no `.env`; use the host’s env vars).
-2. Create a new project on [Railway](https://railway.app) or [Render](https://render.com).
-3. Connect the repo and set the **root directory** to `server` (or the folder that contains `server.js`).
-4. Set **Build command** (if any): `npm install`.
-5. Set **Start command**: `npm start` or `node server.js`.
-6. Add **Environment Variables** (same as `server/.env`):
-   - `NODE_ENV` = `production`
-   - `PORT` = (often auto-set by the host)
-   - `CLIENT_ORIGIN` = `https://your-app.vercel.app` (use your Vercel URL after Step 2, then update this)
-   - `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`
-   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (if you use uploads)
-7. Deploy and copy the **backend URL** (e.g. `https://your-api.railway.app` or `https://your-app.onrender.com`).
-
-### Step 2: Deploy the frontend on Vercel
-
-1. Go to [vercel.com](https://vercel.com) and sign in (e.g. with GitHub).
-2. **Add New** → **Project** and import your GitHub repo.
-3. Configure the project:
-   - **Root Directory**: click **Edit**, set to `client` (so Vercel builds only the React app).
-   - **Framework Preset**: Vite (usually auto-detected).
-   - **Build Command**: `npm run build` (default).
-   - **Output Directory**: `dist` (default).
-   - **Install Command**: `npm install` (default).
-4. Add **Environment Variables** (so the client talks to your backend):
-   - `VITE_API_URL` = your backend URL **without** trailing slash (e.g. `https://your-api.railway.app`). The client will call `{VITE_API_URL}/api`.
-   - `VITE_SOCKET_URL` = same backend URL (e.g. `https://your-api.railway.app`) for Socket.IO.
-5. Click **Deploy**. When it’s done, copy your frontend URL (e.g. `https://zentra.vercel.app`).
-6. Go back to your **backend** project (Railway/Render) and set **CLIENT_ORIGIN** to that Vercel URL (e.g. `https://zentra.vercel.app`). Redeploy the backend so CORS allows the frontend.
-
-### Step 3: Check
-
-- Open the Vercel URL; you should see the app and be able to log in and use real-time features (notifications, etc.) via the backend URL you set in Step 2.
-
----
-
 ## Notes
 
 - Default dev ports: frontend **5173** (Vite), backend **8000** (if set in `server/.env`). Adjust **VITE_DEV_API_TARGET** in client if your backend uses another port.
