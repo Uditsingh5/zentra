@@ -43,4 +43,7 @@ export const disconnectSocket = () => {
     socket.disconnect();
     socket = null;
     console.log("🔌 Socket disconnected");
+  }
+};
 
+export const getSocket = () => socket;
