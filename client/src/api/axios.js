@@ -2,7 +2,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const BACKEND_URL = "https://zentra-o7c5.onrender.com";
-const baseURL = `${BACKEND_URL}`;
+const baseURL = `${BACKEND_URL}/api`;
 
 console.log("🔌 Axios baseURL:", baseURL);
 
