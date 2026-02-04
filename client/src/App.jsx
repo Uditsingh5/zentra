@@ -35,11 +35,7 @@ const App = () => {
 
         const fetchUser = async () => {
             try {
-                const res = await API.get("/user/me", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+                const res = await API.get("/user/me");
                 console.log("Fetched user data:", res.data);
                 const userData = {
                     userId: res.data._id,

@@ -21,7 +21,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 
 const allowedOrigins = isProduction
-  ? (CLIENT_ORIGIN ? [CLIENT_ORIGIN] : ["https://zentra-f3ep52odb-codewithudit01-2386s-projects.vercel.app"])
+  ? [/.*/] // Accept any origin in production
   : [
       "http://localhost:5173",
       "http://localhost:3000",
@@ -30,9 +30,12 @@ const allowedOrigins = isProduction
     ];
 
 const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-    else cb(null, false);
+  origin: isProduction ? true : (origin, cb) => {
+    if (!origin || allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
   },
 };
 
@@ -45,9 +48,12 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-      else cb(null, false);
+    origin: isProduction ? true : (origin, cb) => {
+      if (!origin || allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
+        cb(null, true);
+      } else {
+        cb(null, false);
+      }
     },
     methods: ["GET", "POST"],
   },
