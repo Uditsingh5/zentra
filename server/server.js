@@ -34,7 +34,6 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) cb(null, true);
     else cb(null, false);
   },
-  credentials: true,
 };
 
 const app = express();
@@ -50,7 +49,6 @@ const io = new Server(server, {
       if (!origin || allowedOrigins.includes(origin)) cb(null, true);
       else cb(null, false);
     },
-    credentials: true,
     methods: ["GET", "POST"],
   },
   transports: ["websocket", "polling"],
