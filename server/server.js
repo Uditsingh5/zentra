@@ -52,7 +52,7 @@ const io = new Server(server, {
         origin: (origin, cb) => {
           const allowedOrigins = [
             "http://localhost:5173",
-            "http://localhost:3000",
+              "https://zentra-seven-tawny.vercel.app",
             "http://127.0.0.1:5173",
             "http://127.0.0.1:3000",
           ];
