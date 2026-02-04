@@ -82,6 +82,19 @@ app.get("/", (req, res) => {
   res.send("<h1>Zentra API</h1>");
 });
 
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "Server is running" });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("🔴 Unhandled error:", err);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    error: isProduction ? undefined : err,
+  });
+});
+
 const startServer = (port) => {
   server.listen(port, () => {
     console.log(`Server listening on port ${port}`);

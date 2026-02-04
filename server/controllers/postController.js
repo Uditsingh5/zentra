@@ -48,6 +48,7 @@ export const getPosts = async (req, res) => {
       try {
             const limit = parseInt(req.query.limit) || 10;
             const skip = parseInt(req.query.skip) || 0;
+            console.log(`📡 getPosts called - limit: ${limit}, skip: ${skip}`);
 
 
             // Get total count first
@@ -137,8 +138,9 @@ export const getPosts = async (req, res) => {
                   hasMore: hasMorePosts
             });
       } catch (error) {
-            console.error('Error fetching posts:', error);
-            return res.status(500).json({ message: 'Internal Server Error' });
+            console.error('🔴 Error fetching posts:', error.message);
+            console.error('Stack:', error.stack);
+            return res.status(500).json({ message: 'Internal Server Error', error: error.message });
       }
 };
 

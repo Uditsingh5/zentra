@@ -20,6 +20,8 @@ import { setUser, clearUser } from "./slices/userSlice.js";
 import { useDispatch, useSelector } from "react-redux";
 import { initSocket, disconnectSocket, getSocket } from "./services/socket.js";
 
+console.log("API BASE URL:", import.meta.env.VITE_API_BASE_URL);
+console.log("SOCKET URL:", import.meta.env.VITE_SOCKET_URL);
 
 const App = () => {
     const dispatch = useDispatch();
@@ -281,6 +283,7 @@ const App = () => {
 
                 <Route path="*" element={<NotFound />} />
             </Routes>
+            
         </>
     );
 };
