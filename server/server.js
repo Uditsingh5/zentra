@@ -21,7 +21,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 
 const allowedOrigins = isProduction
-  ? (CLIENT_ORIGIN ? [CLIENT_ORIGIN] : [])
+  ? (CLIENT_ORIGIN ? [CLIENT_ORIGIN] : ["https://zentra-f3ep52odb-codewithudit01-2386s-projects.vercel.app"])
   : [
       "http://localhost:5173",
       "http://localhost:3000",
