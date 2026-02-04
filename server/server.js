@@ -20,24 +20,23 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 
-const allowedOrigins = isProduction
-  ? [/.*/] // Accept any origin in production
-  : [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "http://127.0.0.1:5173",
-      "http://127.0.0.1:3000",
-    ];
-
-const corsOptions = {
-  origin: isProduction ? true : (origin, cb) => {
-    if (!origin || allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
-      cb(null, true);
-    } else {
-      cb(null, false);
-    }
-  },
-};
+const corsOptions = isProduction
+  ? { origin: "*" }
+  : {
+      origin: (origin, cb) => {
+        const allowedOrigins = [
+          "http://localhost:5173",
+          "http://localhost:3000",
+          "http://127.0.0.1:5173",
+          "http://127.0.0.1:3000",
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+          cb(null, true);
+        } else {
+          cb(null, false);
+        }
+      },
+    };
 
 const app = express();
 app.use(cors(corsOptions));
@@ -47,16 +46,24 @@ app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: isProduction ? true : (origin, cb) => {
-      if (!origin || allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
-        cb(null, true);
-      } else {
-        cb(null, false);
-      }
-    },
-    methods: ["GET", "POST"],
-  },
+  cors: isProduction
+    ? { origin: "*" }
+    : {
+        origin: (origin, cb) => {
+          const allowedOrigins = [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+          ];
+          if (!origin || allowedOrigins.includes(origin)) {
+            cb(null, true);
+          } else {
+            cb(null, false);
+          }
+        },
+        methods: ["GET", "POST"],
+      },
   transports: ["websocket", "polling"],
 });
 
