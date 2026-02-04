@@ -30,19 +30,26 @@ const allowedOrigins = [
 
 const isOriginAllowed = (origin) => {
   if (!origin) return true;
-  if (allowedOrigins.includes(origin)) return true;
-  if (isProduction && CLIENT_ORIGIN && origin === CLIENT_ORIGIN) return true;
-  if (isProduction && origin.startsWith("https://") && origin.endsWith(".vercel.app")) return true;
+  const o = origin.replace(/\/$/, "");
+  if (allowedOrigins.includes(o) || allowedOrigins.includes(origin)) return true;
+  if (isProduction && CLIENT_ORIGIN && (o === CLIENT_ORIGIN || origin === CLIENT_ORIGIN)) return true;
+  if (isProduction && /^https:\/\//.test(origin) && origin.includes(".vercel.app")) return true;
   return false;
 };
 
 const corsOptions = {
   origin: (origin, cb) => {
-    cb(null, isOriginAllowed(origin));
+    if (isOriginAllowed(origin)) {
+      cb(null, origin || allowedOrigins[0] || true);
+    } else {
+      cb(null, false);
+    }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 };
 
 const app = express();
