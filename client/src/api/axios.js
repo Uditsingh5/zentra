@@ -1,12 +1,12 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL
-  ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")}/api`
-  : "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://zentra-o7c5.onrender.com";
+const baseURL = `${API_BASE_URL.replace(/\/$/, "")}/api`;
 
 const API = axios.create({
   baseURL,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -38,13 +38,10 @@ API.interceptors.response.use(
       localStorage.removeItem('token');
       window.location.href = '/login';
     } else if (error.response?.status === 404) {
-      const isRelativeApi = !import.meta.env.VITE_API_BASE_URL && (error.config?.baseURL === '/api' || String(error.config?.baseURL || '').startsWith('/'));
-      toast.error(isRelativeApi
-        ? 'API not configured: set VITE_API_BASE_URL (and VITE_SOCKET_URL) in Vercel to your backend URL, then redeploy.'
-        : 'Resource not found');
+      toast.error('Resource not found');
     } else if (error.response?.status === 500) {
       toast.error('Server error. Please try again later');
-    } else if (error.code === 'ERR_NETWORK') {
+    } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
       toast.error('Network error. Check your connection');
     } else {
       toast.error(message);
