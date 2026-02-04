@@ -20,50 +20,50 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === "production";
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
 
-const corsOptions = isProduction
-  ? { origin: "*" }
-  : {
-      origin: (origin, cb) => {
-        const allowedOrigins = [
-          "http://localhost:5173",
-          "http://localhost:3000",
-          "http://127.0.0.1:5173",
-          "http://127.0.0.1:3000",
-        ];
-        if (!origin || allowedOrigins.includes(origin)) {
-          cb(null, true);
-        } else {
-          cb(null, false);
-        }
-      },
-    };
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:3000",
+  CLIENT_ORIGIN,
+].filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (isProduction && CLIENT_ORIGIN && origin === CLIENT_ORIGIN) return true;
+  if (isProduction && origin.startsWith("https://") && origin.endsWith(".vercel.app")) return true;
+  return false;
+};
+
+const corsOptions = {
+  origin: (origin, cb) => {
+    cb(null, isOriginAllowed(origin));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
 const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Move health check before other routes
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "Server is running", timestamp: new Date().toISOString() });
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: isProduction
-    ? { origin: "*" }
-    : {
-        origin: (origin, cb) => {
-          const allowedOrigins = [
-            "http://localhost:5173",
-              "https://zentra-seven-tawny.vercel.app",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
-          ];
-          if (!origin || allowedOrigins.includes(origin)) {
-            cb(null, true);
-          } else {
-            cb(null, false);
-          }
-        },
-        methods: ["GET", "POST"],
-      },
+  cors: {
+    origin: (origin, cb) => cb(null, isOriginAllowed(origin)),
+    credentials: true,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  },
   transports: ["websocket", "polling"],
 });
 
@@ -80,10 +80,6 @@ app.use("/api/upload", uploadRouter);
 
 app.get("/", (req, res) => {
   res.send("<h1>Zentra API</h1>");
-});
-
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "OK", message: "Server is running" });
 });
 
 // Global error handler

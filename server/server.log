@@ -1,0 +1,10 @@
+
+> zentra@1.0.0 dev
+> nodemon -q server.js
+
+Server: [+] MongoDB Atlas Connected!
+Server listening on port 8000
+Server: [+] MongoDB Atlas Connected!
+Server listening on port 8000
+Server: [+] MongoDB Atlas Connected!
+Server listening on port 8000
